@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>乘用车离合器设计与计算交互工具</title>
+<title>汽车膜片弹簧离合器设计计算工具</title>
 <style>
   :root {
     --blue: #1a4a8a;
@@ -152,7 +152,7 @@ user-select: none
   <div class="login-box">
     <h2>🎓 学生身份验证</h2>
     <div class="desc">
-      欢迎使用乘用车离合器设计计算工具！<br>
+      欢迎使用汽车膜片弹簧离合器设计计算工具！<br>
       请输入您的学号和姓名开始设计。完成后系统将自动评分并生成报告。
     </div>
     <div class="login-field">
@@ -179,7 +179,7 @@ user-select: none
     <div class="login-field">
       <label>教师密码</label>
       <input type="password" id="teacherPassword" placeholder="请输入密码">
-      <div class="hint">默认密码： gxuqpp123（可在代码中修改）</div>
+      <div class="hint"></div>
       <div class="error" id="pwdError">密码错误，请重试</div>
     </div>
     <div style="display:flex;gap:10px;margin-top:4px">
@@ -192,7 +192,7 @@ user-select: none
 <div class="app-header">
   <div>
     <h1>🚗 汽车膜片弹簧离合器设计计算工具·广西大学 ·车辆工程专业 ·《汽车设计》课程教学团队</h1>
-    <div class="sub">《汽车设计》第6版（闵海涛、王建华）— 作业版 📱移动端兼容</div>
+    <div class="sub">《汽车设计》第6版（闵海涛、王建华）—作业版 📱移动端兼容</div>
   </div>
   <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
     <div class="teacher-btn" onclick="openTeacherLogin()">👨‍🏫 教师管理</div>
@@ -613,7 +613,7 @@ user-select: none
   <div class="card">
     <div class="card-title"><span class="icon">📋</span>从动盘毂矩形花键尺寸系列（表2-8）</div>
     <div class="info-box" style="margin-bottom:8px">
-      数据来源：《汽车设计》第5版表2-8（矩形花键 GB/T 1144）。<strong>点击任意行自动填入上方输入框。</strong>
+      数据来源：《汽车设计》第6版表2-8（矩形花键 GB/T 1144）。<strong>点击任意行自动填入上方输入框。</strong>
       蓝色高亮行为当前输入参数对应的规格。
     </div>
     <table class="result-table" id="splineSeriesTable" style="cursor:pointer">
@@ -723,7 +723,7 @@ user-select: none
 
 <script>
 // ========== 配置 ==========
-const TEACHER_PASSWORD = 'teacher123'; // 教师密码，可在此修改
+const TEACHER_PASSWORD = 'gxuqpp123'; // 教师密码，可在此修改
 let teacherData = []; // 教师导入的学生数据
 
 // ========== DATA ==========
@@ -748,7 +748,7 @@ function switchTab(i) {
 }
 
 // ========== DISC SERIES TABLE (表2-4) ==========
-// [D, d] pairs from 《汽车设计》第5版 表2-4
+// [D, d] pairs from 《汽车设计》第6版 表2-4
 const DISC_SERIES = [
   [160, 100],[160, 110],
   [180, 115],[180, 125],
@@ -1029,7 +1029,7 @@ function calcVerify() {
 // K = π·E·h·ln(R/r) / [6(1-μ²)(R₁-r₁)²]
 // b = (R-r)/(R₁-r₁)
 // F₁(λ) = K·λ·[(H-λb)(H-λb/2)+h²]
-const _E = 206000, _MU = 0.3;
+const _E = 210000, _MU = 0.3;
 function calcF1(lam, H, h, R, r, R1, r1) {
   if (lam <= 0) return 0;
   const K = Math.PI * _E * h * Math.log(R/r) / (6*(1-_MU*_MU)*(R1-r1)*(R1-r1));
@@ -1180,7 +1180,7 @@ function calcSpring() {
   // 输入参数
   const br = getN('br_spring') || (2 * Math.PI * r / getN('n_fingers'));
   const n_fin = getN('n_fingers') || 18;
-  const E_s = 206000, mu_s = 0.3;
+  const E_s = 210000, mu_s = 0.3;
 
   // 中性点半径 e（课本式2-27相关）
   const e = (R - r) / Math.log(R / r);
@@ -1196,7 +1196,7 @@ function calcSpring() {
   const phi_calc_rad = phi_f_rad < phi_P_rad ? phi_f_rad : phi_P_rad;
   const phi_label = phi_f_rad < phi_P_rad ? 'φf（φf < φP，用φf）' : 'φP（φf ≥ φP，用φP）';
 
-  // 式2-28：碟簧部分切向应力 σtB（教材第5版）
+  // 式2-28：碟簧部分切向应力 σtB（《汽车设计》第6版）
   // σtB = E/(1-μ²)/r × { (e-r)·φ²/2 − [(e-r)·α + h/2]·φ }
   // α 为圆锥底角（rad），φ 为取用转角（rad），r 为碟簧小端半径
   const lnRr2 = Math.log(R / r);
@@ -2622,7 +2622,7 @@ function generateFinalReport() {
   const r = calcSmartScore();
   const grade = r.grade;
   let report = '===============================================\n';
-  report += '   乘用车离合器设计计算报告\n';
+  report += '  汽车膜片弹簧离合器设计计算报告\n';
   report += '===============================================\n\n';
   report += '【学生信息】\n';
   report += `学号：${state.studentId}\n`;
