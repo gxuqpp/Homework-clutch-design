@@ -179,7 +179,7 @@ user-select: none
     <div class="login-field">
       <label>教师密码</label>
       <input type="password" id="teacherPassword" placeholder="请输入密码">
-      <div class="hint">默认密码：teacher123（可在代码中修改）</div>
+      <div class="hint">默认密码：gxuqpp123（可在代码中修改）</div>
       <div class="error" id="pwdError">密码错误，请重试</div>
     </div>
     <div style="display:flex;gap:10px;margin-top:4px">
@@ -191,7 +191,7 @@ user-select: none
 
 <div class="app-header">
   <div>
-    <h1>🚗 汽车膜片弹簧离合器设计计算工具</h1>
+    <h1>🚗 汽车膜片弹簧离合器设计计算工具·广西大学 ·车辆工程专业 ·《汽车设计》课程教学团队</h1>
     <div class="sub">《汽车设计》第6版（闵海涛、王建华）— 作业版 📱移动端兼容</div>
   </div>
   <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
@@ -235,6 +235,11 @@ user-select: none
           <option value="medium">中型商用车（6t~14t）</option>
           <option value="heavy">重型商用车（ma>14t）</option>
         </select>
+      </div>
+      <div class="field">
+        <label>发动机起步转速 ne</label>
+        <input type="number" id="ne_start" value="2000" step="100" min="500" max="4000">
+        <div class="unit">r/min &nbsp;|&nbsp; 参考值：乘用车取 2000 r/min，商用车取 1500 r/min</div>
       </div>
     </div>
     <div class="btn-bar"><button class="btn btn-primary" onclick="calcAll()">✅ 更新所有计算</button></div>
@@ -468,7 +473,7 @@ user-select: none
     <div class="card-title"><span class="icon">🔩</span>扭转减振器参数设计</div>
     <div class="grid3">
       <div class="field"><label>极限转矩系数（乘用车=2.0）</label><input type="number" id="Tj_coef" value="2.0" step="0.1"></div>
-      <div class="field"><label>扭转刚度 kδ (N·m/rad)</label><input type="number" id="k_delta" value="2300"></div>
+      <div class="field"><label>扭转刚度 kδ (N·m/rad)&nbsp;<span style="color:var(--ok);font-size:11px;font-weight:400">参考上限 ≤ 13×Tⱼ = <span id="kd_ref_hint">—</span> N·m/rad</span></label><input type="number" id="k_delta" value="2300"></div>
       <div class="field"><label>阻尼转矩系数（0.06～0.17）</label><input type="number" id="Tu_coef" value="0.12" step="0.01"></div>
       <div class="field"><label>预紧转矩系数（0.05～0.15）</label><input type="number" id="Tn_coef" value="0.10" step="0.01"></div>
       <div class="field"><label>R₀系数（0.60～0.75）</label><input type="number" id="R0_coef" value="0.60" step="0.05"></div>
@@ -718,7 +723,7 @@ user-select: none
 
 <script>
 // ========== 配置 ==========
-const TEACHER_PASSWORD = 'gxuqpp123'; // 教师密码，可在此修改
+const TEACHER_PASSWORD = 'teacher123'; // 教师密码，可在此修改
 let teacherData = []; // 教师导入的学生数据
 
 // ========== DATA ==========
@@ -896,7 +901,7 @@ function calcVerify() {
 
   // ---- Slip energy W ----
   // 简化公式: W = 0.5 * ma * v1²
-  const ne_start = 2000; // r/min
+  const ne_start = getN('ne_start') || 2000; // r/min（来自整车基本参数输入）
   const v1 = 2*Math.PI*ne_start/60 * r_w / (i1*i0); // m/s
   const W_simple = 0.5 * ma * v1 * v1;
 
@@ -1207,9 +1212,8 @@ function calcSpring() {
   // 式2-31：当量应力 σjB = σrB - σtB（注意 σtB 为负值，相减等于相加绝对值）
   const sigma_jB = sigma_rB - sigma_tB;
 
-  const str_ok = sigma_jB >= 1500 && sigma_jB <= 1700;
-  const str_badge = sigma_jB < 1500 ? badge(false, '✗ 偏低') :
-                    sigma_jB <= 1700 ? badge(true, '✓ 合格') : badge(false, '✗ 超限');
+  const str_ok = sigma_jB <= 1700;
+  const str_badge = sigma_jB <= 1700 ? badge(true, '✓ 合格') : badge(false, '✗ 超限');
 
   // br 参考计算值
   const br_ref = 2 * Math.PI * r / n_fin;
@@ -1232,12 +1236,11 @@ function calcSpring() {
         <td><strong>${fmt(sigma_tB,1)}</strong></td><td>MPa</td></tr>
       <tr><td>分离指弯曲应力 σrB（式2-30）</td><td>6·F₂C·(r−rf) / (n·h²·br) = 6×${Math.round(F2C)}×(${fmt(r,3)}−${rf}) / (${n_fin}×${h}²×${fmt(br,2)})</td><td><strong>${fmt(sigma_rB,1)}</strong></td><td>MPa</td></tr>
       <tr style="background:#f0fff4"><td><strong>当量应力 σjB（式2-31）</strong></td><td>σrB − σtB = ${fmt(sigma_rB,1)} − (${fmt(sigma_tB,1)})</td><td><strong style="font-size:15px">${fmt(sigma_jB,1)}</strong></td><td>MPa</td></tr>
-      <tr><td>强度要求</td><td>1500 ～ 1700 MPa</td><td>${str_badge}</td><td>—</td></tr>
+      <tr><td>强度要求</td><td>≤ 1700 MPa</td><td>${str_badge}</td><td>—</td></tr>
     </table>
-    ${!str_ok ? `<div class="info-box" style="margin-top:8px;background:${sigma_jB<1500?'#fffbea':'#fdeaea'}">
-      ${sigma_jB < 1500 ? '⚠ σjB = '+fmt(sigma_jB,1)+' MPa 偏低（<1500 MPa），可适当减小 br 或增大 h。' :
-                          '⚠ σjB = '+fmt(sigma_jB,1)+' MPa 超出上限（>1700 MPa），应增大 br、减小 h 或调整几何参数。'}
-    </div>` : `<div class="info-box" style="margin-top:8px;background:#eaf3de;border-color:#639922;color:#173404">✅ σjB = ${fmt(sigma_jB,1)} MPa，满足强度要求（1500～1700 MPa）。</div>`}`;
+    ${!str_ok ? `<div class="info-box" style="margin-top:8px;background:#fdeaea">
+      ⚠ σjB = ${fmt(sigma_jB,1)} MPa 超出上限（> 1700 MPa），应增大 br、减小 h 或调整几何参数。
+    </div>` : `<div class="info-box" style="margin-top:8px;background:#eaf3de;border-color:#639922;color:#173404">✅ σjB = ${fmt(sigma_jB,1)} MPa，满足强度要求（≤ 1700 MPa）。</div>`}`;
 
   document.getElementById('springStrengthResult').innerHTML = strengthHtml;
   document.getElementById('springStrengthResult').style.background = '';
@@ -1924,6 +1927,9 @@ function calcDamper() {
   const Tu = Tu_c * Temax;
   const Tn = Tn_c * Temax;
   const R0 = R0_c * d / 2;
+  // 更新 kδ 参考上限提示
+  const kdRefEl = document.getElementById('kd_ref_hint');
+  if (kdRefEl) kdRefEl.textContent = fmt(13 * Tj, 1);
   // Zj selection
   let Zj = 4;
   if (D_fric >= 325) Zj = 8; else if (D_fric >= 250) Zj = 6; else Zj = 4;
@@ -1937,7 +1943,7 @@ function calcDamper() {
   const l_min = 1.1 * d_s * n_total;
   const delta_l = P / k_spring;
   const l0 = l_min + delta_l;
-  const delta_l_pre = Tn / (k_spring * Zj * R0);
+  const delta_l_pre = Tn * 1000 / (k_spring * Zj * R0);
   const l_work = l0 - delta_l_pre;
   const phi_j = 2 * Math.asin(delta_l / (2 * R0)) * 180 / Math.PI;
   const R2 = lambda1 / Math.sin(phi_j * Math.PI / 180);
@@ -1956,10 +1962,16 @@ function calcDamper() {
     <tr><td>弹簧刚度</td><td>k</td><td>kδ/(1000×R₀²×Zⱼ)</td><td><strong>${fmt(k_spring,2)}</strong></td><td>N/mm</td><td>—</td></tr>
     <tr><td>有效圈数</td><td>i</td><td>Ed⁴/(8Dc³k)</td><td><strong>${fmt(i_eff,3)}</strong></td><td>圈</td><td>—</td></tr>
     <tr><td>总圈数</td><td>n</td><td>i+1.75</td><td><strong>${fmt(n_total,3)}</strong></td><td>圈</td><td>—</td></tr>
-    <tr><td>极限转角</td><td>φⱼ</td><td>2arcsin(Δl/2R₀)</td><td><strong>${fmt(phi_j,2)}</strong></td><td>°</td><td>${badge(phi_j>=3&&phi_j<=12)}</td></tr>
+    <tr><td>极限转角</td><td>φⱼ</td><td>2arcsin(Δl/2R₀)</td><td><strong>${fmt(phi_j,2)}</strong></td><td>°&nbsp;<span style="color:#888;font-size:11px">范围 3°～12°</span></td><td>${badge(phi_j>=3&&phi_j<=12)}</td></tr>
     <tr><td>限位销安装半径</td><td>R₂</td><td>λ/sin(φⱼ)</td><td><strong>${fmt(R2,2)}</strong></td><td>mm</td><td>—</td></tr>
   </table>`;
   document.getElementById('damperResult').innerHTML = html;
+
+  // ── 取值参考：由 φⱼ∈[3°,12°] 反推 kδ 和 k 的合法区间 ──
+  const kd_min = Tj / (2 * Math.sin(6  * Math.PI / 180)); // φⱼ≤12° → kδ≥
+  const kd_max = Tj / (2 * Math.sin(1.5 * Math.PI / 180)); // φⱼ≥3°  → kδ≤
+  const ks_min = kd_min * 1000 / (R0 * R0 * Zj);           // φⱼ≤12° → k≥ (N/mm)
+  const ks_max = kd_max * 1000 / (R0 * R0 * Zj);           // φⱼ≥3°  → k≤ (N/mm)
 
   let detail = `<table class="result-table">
     <tr><th>弹簧参数</th><th>符号</th><th>值</th><th>单位</th></tr>
@@ -1971,7 +1983,36 @@ function calcDamper() {
     <tr><td>预变形量</td><td>Δl'</td><td>${fmt(delta_l_pre,4)}</td><td>mm</td></tr>
     <tr><td>安装工作高度</td><td>l</td><td>${fmt(l_work,3)}</td><td>mm</td></tr>
     <tr><td>限位销间隙</td><td>λ</td><td>${lambda1}</td><td>mm (2.5～4)</td></tr>
-  </table>`;
+  </table>
+  <div class="info-box" style="margin-top:12px;background:#e8f4ff;border-color:#6ab0e0;color:#1a3560">
+    <strong>📐 参数取值参考（由 φⱼ∈[3°,12°] 反推，Tⱼ=${fmt(Tj,1)} N·m，R₀=${fmt(R0,2)} mm，Zⱼ=${Zj}）</strong>
+    <table style="width:100%;border-collapse:collapse;margin-top:8px;font-size:13px">
+      <tr style="background:rgba(0,0,0,0.05)">
+        <th style="padding:6px 8px;text-align:left;border:1px solid #9ac">条件</th>
+        <th style="padding:6px 8px;text-align:left;border:1px solid #9ac">弹簧线刚度 k (N/mm)</th>
+        <th style="padding:6px 8px;text-align:left;border:1px solid #9ac">扭转刚度 kδ (N·m/rad)</th>
+      </tr>
+      <tr>
+        <td style="padding:6px 8px;border:1px solid #9ac">φⱼ ≤ 12°（不超上限）</td>
+        <td style="padding:6px 8px;border:1px solid #9ac">k &nbsp;<strong>≥ ${fmt(ks_min,2)}</strong> N/mm</td>
+        <td style="padding:6px 8px;border:1px solid #9ac">kδ <strong>≥ ${fmt(kd_min,1)}</strong> N·m/rad</td>
+      </tr>
+      <tr style="background:rgba(0,0,0,0.03)">
+        <td style="padding:6px 8px;border:1px solid #9ac">φⱼ ≥ 3°（不低下限）</td>
+        <td style="padding:6px 8px;border:1px solid #9ac">k &nbsp;<strong>≤ ${fmt(ks_max,2)}</strong> N/mm</td>
+        <td style="padding:6px 8px;border:1px solid #9ac">kδ <strong>≤ ${fmt(kd_max,1)}</strong> N·m/rad</td>
+      </tr>
+      <tr>
+        <td style="padding:6px 8px;border:1px solid #9ac;font-weight:600;color:var(--blue)">满足 3°≤ φⱼ ≤12°</td>
+        <td style="padding:6px 8px;border:1px solid #9ac;font-weight:600">${fmt(ks_min,2)} ≤ k ≤ ${fmt(ks_max,2)} N/mm</td>
+        <td style="padding:6px 8px;border:1px solid #9ac;font-weight:600">${fmt(kd_min,1)} ≤ kδ ≤ ${fmt(kd_max,1)} N·m/rad</td>
+      </tr>
+    </table>
+    <div style="margin-top:6px;font-size:11px;color:#556;line-height:1.6">
+      推导：φⱼ = 2arcsin(Δl/2R₀)，Δl = Tⱼ·R₀/kδ &nbsp;⟹&nbsp;
+      kδ = Tⱼ / [2sin(φⱼ/2)]，k = kδ·1000/(R₀²·Zⱼ)
+    </div>
+  </div>`;
   document.getElementById('damperSpringDetail').innerHTML = detail;
   updateSummaryChecks();
 }
@@ -2095,7 +2136,7 @@ function calcControl() {
         <td><strong>${fmt(S1_calc,2)}</strong></td>
         <td>mm</td>
         <td>20～30 mm</td>
-        <td>${badge(S1_calc >= 20 && S1_calc <= 30)}</td>
+        <td>${S1_calc > 30 ? '<span class="badge badge-err">✗ 超出上限</span>' : (S1_calc >= 20 ? '<span class="badge badge-ok">✓ 满足</span>' : '<span class="badge badge-warn">△ 偏小</span>')}</td>
       </tr>
       <tr style="background:#fff8e8">
         <td>踏板自由行程 S₁（输入值）</td>
@@ -2103,7 +2144,7 @@ function calcControl() {
         <td><strong>${S1_input}</strong></td>
         <td>mm</td>
         <td>20～30 mm</td>
-        <td>${badge(S1_input >= 20 && S1_input <= 30)}</td>
+        <td>${S1_input > 30 ? '<span class="badge badge-err">✗ 超出上限</span>' : (S1_input >= 20 ? '<span class="badge badge-ok">✓ 满足</span>' : '<span class="badge badge-warn">△ 偏小</span>')}</td>
       </tr>
       <tr>
         <td>踏板工作行程 S₂</td>
@@ -2117,7 +2158,7 @@ function calcControl() {
         <td><strong style="font-size:15px">${fmt(S_total,2)}</strong></td>
         <td>mm</td>
         <td>80～150 mm</td>
-        <td>${badge(S_total >= 80 && S_total <= 150)}</td>
+        <td>${S_total > 150 ? '<span class="badge badge-err">✗ 超出上限</span>' : (S_total >= 80 ? '<span class="badge badge-ok">✓ 满足</span>' : '<span class="badge badge-warn">△ 偏小</span>')}</td>
       </tr>
 
       <tr style="background:#f8f8f8"><td colspan="6" style="font-weight:600;color:var(--blue);padding:6px 10px">▶ 踏板力与操纵功</td></tr>
@@ -2127,7 +2168,7 @@ function calcControl() {
         <td><strong style="font-size:15px">${noSpring ? '—' : fmt(Ff,2)}</strong></td>
         <td>N</td>
         <td>80～150 N</td>
-        <td>${noSpring ? '<span class="badge badge-warn">需先算弹簧</span>' : badge(Ff >= 80 && Ff <= 150)}</td>
+        <td>${noSpring ? '<span class="badge badge-warn">需先算弹簧</span>' : (Ff > 150 ? '<span class="badge badge-err">✗ 超出上限</span>' : (Ff >= 80 ? '<span class="badge badge-ok">✓ 满足</span>' : '<span class="badge badge-warn">△ 偏小</span>'))}</td>
       </tr>
       <tr style="background:${WL > 0 ? (WL <= 30 ? '#f0fff4' : '#fdeaea') : '#fff8f0'}">
         <td><strong>分离离合器所做的功 WL（式2-44）</strong></td>
@@ -2142,8 +2183,8 @@ function calcControl() {
 
     <div style="margin-top:12px" class="info-box">
       💡 <strong>参数调整建议：</strong><br>
-      • 踏板力Ff超出80～150N → 调整a₂/a₁比或b₂/b₁比或缸径d₁/d₂ → 改变传动比<br>
-      • 踏板总行程S超出范围 → 调整S₀f（自由行程），或调整对偶面间隙δ<br>
+      • 踏板力Ff超出150N → 调整a₂/a₁比或b₂/b₁比或缸径d₁/d₂ → 改变传动比<br>
+      • 踏板总行程S超出150mm → 调整S₀f（自由行程），或调整对偶面间隙δ<br>
       • 操纵功WL > 30J → 减小δ 或提高η，或降低弹簧力（需重核β≥1.10）<br>
       • S₁计算值与输入值偏差较大时，建议以计算值为准重新确定S₁
     </div>`;
@@ -2442,7 +2483,13 @@ function calcSmartScore() {
   const vD_score = vD_ok ? 4 : 0;
   items.push({ cat:'参数校核', name:'最大圆周速度 vD', std:'≤65～70 m/s', val:`${fmt(vD,2)} m/s`, max:4, score:vD_score });
 
-  const w = state.w_spec || 0;
+  // 单位滑磨功 w — 与第②部分calcVerify保持完全相同的公式和参数来源
+  const _ma = getN('ma'), _i1 = getN('i1'), _i0 = getN('i0'), _rw = getN('r_wheel');
+  const _ne = getN('ne_start') || 2000;
+  const _A  = Math.PI/4*(D*D-d*d);
+  const _v1 = 2*Math.PI*_ne/60 * _rw / (_i1*_i0);
+  const _W  = 0.5*_ma*_v1*_v1;
+  const w   = _W / (Z*_A);
   const w_ok = w > 0 && w <= 0.20;
   const w_score = w_ok ? 4 : (w > 0 && w <= 0.25 ? 2 : (w > 0 ? 0 : 2));
   items.push({ cat:'参数校核', name:'单位滑磨功 w', std:'≤0.20 J/mm²', val: w>0?`${fmt(w,5)} J/mm²`:'未计算', max:4, score:w_score });
@@ -2504,14 +2551,14 @@ function calcSmartScore() {
 
   // ─── 模块5：操纵机构（15分）───
   const Ff = state.Ff || 0;
-  const Ff_ok = Ff >= 80 && Ff <= 150;
-  const Ff_score = Ff_ok ? 5 : (Ff >= 60 && Ff <= 180 ? 3 : (Ff > 0 ? 1 : 0));
-  items.push({ cat:'操纵机构', name:'踏板力 Ff', std:'80～150 N（乘用车）', val:Ff>0?`${fmt(Ff,1)} N`:'未计算', max:5, score:Ff_score });
+  const Ff_ok = Ff > 0 && Ff <= 150;
+  const Ff_score = Ff_ok ? 5 : (Ff > 150 && Ff <= 180 ? 3 : (Ff > 180 ? 1 : 0));
+  items.push({ cat:'操纵机构', name:'踏板力 Ff', std:'≤150 N（乘用车）', val:Ff>0?`${fmt(Ff,1)} N`:'未计算', max:5, score:Ff_score });
 
   const S_total = state.S_total || 0;
-  const S_ok = S_total >= 80 && S_total <= 150;
-  const S_score = S_ok ? 5 : (S_total >= 60 && S_total <= 170 ? 3 : (S_total > 0 ? 1 : 0));
-  items.push({ cat:'操纵机构', name:'踏板总行程 S', std:'80～150 mm', val:S_total>0?`${fmt(S_total,1)} mm`:'未计算', max:5, score:S_score });
+  const S_ok = S_total > 0 && S_total <= 150;
+  const S_score = S_ok ? 5 : (S_total > 150 && S_total <= 170 ? 3 : (S_total > 170 ? 1 : 0));
+  items.push({ cat:'操纵机构', name:'踏板总行程 S', std:'≤150 mm', val:S_total>0?`${fmt(S_total,1)} mm`:'未计算', max:5, score:S_score });
 
   const WL = state.WL || 0;
   const WL_ok = WL > 0 && WL <= 30;
@@ -2643,7 +2690,8 @@ function updateSummaryChecks() {
   const Rc = (2/3)*(Math.pow(R_mm,3)-Math.pow(r_mm,3))/(Math.pow(R_mm,2)-Math.pow(r_mm,2));
   const F = Tc*1000/(f*Z*Rc);
   const ma = getN('ma'), i1 = getN('i1'), i0 = getN('i0'), r_w = getN('r_wheel');
-  const v1 = 2*Math.PI*2000/60*r_w/(i1*i0);
+  const ne_start_u = getN('ne_start') || 2000;
+  const v1 = 2*Math.PI*ne_start_u/60*r_w/(i1*i0);
   const W = 0.5*ma*v1*v1;
   const w_spec = W/(Z*A);
   const Tj = getN('Tj_coef') * Temax;
@@ -2663,7 +2711,7 @@ function updateSummaryChecks() {
   upd('chk_w', `${fmt(w_spec,5)} J/mm²`, w_spec<=0.20);
   upd('chk_Tj', `${fmt(Tj,1)} N·m`, Math.abs(Tj - 2*Temax) < 1);
   upd('chk_lever', lever > 0 ? `${fmt(lever,4)}` : '—', lever>=0.222&&lever<=0.435);
-  upd('chk_Ff', Ff > 0 ? `${fmt(Ff,1)} N` : '—', Ff>=80&&Ff<=150);
+  upd('chk_Ff', Ff > 0 ? `${fmt(Ff,1)} N` : '—', !Ff || Ff <= 150);
   upd('chk_sigma_p', state.sigma_p > 0 ? `${fmt(state.sigma_p,2)} MPa` : '—', !state.sigma_p || state.sigma_p<=30);
   upd('chk_tau_s',   state.tau_s   > 0 ? `${fmt(state.tau_s,2)} MPa`   : '—', !state.tau_s   || state.tau_s<=15);
 }
@@ -2715,8 +2763,8 @@ function calcSummary() {
     { name: '内外径比c', ok: d/D >= 0.53 && d/D <= 0.70 },
     { name: '最大圆周速度vD', ok: Math.PI*D/1000*getN('nemax')/60 <= 70 },
     { name: '单位滑磨功w', ok: true }, // simplified
-    { name: '膜片弹簧杠杆比', ok: !state.lever || (state.lever >= 2.3 && state.lever <= 4.5) },
-    { name: '踏板力Ff', ok: !state.Ff || (state.Ff >= 80 && state.Ff <= 150) },
+    { name: '膜片弹簧杠杆比', ok: !state.lever || (state.lever >= 0.222 && state.lever <= 0.435) },
+    { name: '踏板力Ff', ok: !state.Ff || state.Ff <= 150 },
     { name: '操纵功WL≤30J', ok: !state.WL || state.WL <= 30 },
     { name: '花键挤压应力≤30MPa', ok: !state.sigma_p || state.sigma_p <= 30 },
     { name: '花键剪切应力≤15MPa', ok: !state.tau_s || state.tau_s <= 15 },
@@ -2798,7 +2846,7 @@ function exportReport() {
 // ========== LOCAL STORAGE PERSISTENCE ==========
 // IDs of all inputs/selects to save
 const SAVE_IDS = [
-  'Temax','nT','nemax','ma','i1','i0','r_wheel','umax','vehicleType',
+  'Temax','nT','nemax','ma','i1','i0','r_wheel','umax','vehicleType','ne_start',
   'springType','beta','p0','f','Z','delta_t','KD','D','d','b',
   'h_spring','H_spring','R_spring','r_spring_direct',
   'n_fingers','R1_spring','r1_spring','r0_spring','rf_spring',
@@ -2893,6 +2941,5 @@ return false;
     }
   });
 </script>
-
 </body>
 </html>
