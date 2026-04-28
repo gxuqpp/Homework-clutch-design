@@ -143,7 +143,6 @@
   }
 user-select: none
 </style>
-
 </head>
 <body>
 
@@ -231,9 +230,9 @@ user-select: none
       <div class="field"><label>最高车速 umax</label><input type="number" id="umax" value="130"><div class="unit">km/h</div></div>
       <div class="field"><label>车型类别</label>
         <select id="vehicleType">
-          <option value="car" selected>乘用车 / 小型商用车（ma≤6t）</option>
-          <option value="medium">中型商用车（6t~14t）</option>
-          <option value="heavy">重型商用车（ma>14t）</option>
+          <option value="car" selected>乘用车（[w] ≤ 0.40 J/mm²）</option>
+          <option value="light_truck">商用车（最大总质量 &lt; 6.0 t，[w] ≤ 0.33 J/mm²）</option>
+          <option value="heavy_truck">商用车（最大总质量 ≥ 6.0 t，[w] ≤ 0.25 J/mm²）</option>
         </select>
       </div>
       <div class="field">
@@ -254,7 +253,7 @@ user-select: none
       <tr><td>直径系数 KD（乘用车）</td><td>14.6</td><td>《汽车设计》P60 表2-3</td></tr>
       <tr><td>内外径比 c = d/D</td><td>0.53 ～ 0.70</td><td>《汽车设计》P61</td></tr>
       <tr><td>最大圆周速度 vD</td><td>≤ 65～70 m/s</td><td>《汽车设计》P61</td></tr>
-      <tr><td>单位摩擦面积滑磨功 w</td><td>≤ 0.20 J/mm²（乘用车）</td><td>《汽车设计》P62</td></tr>
+      <tr><td>单位摩擦面积滑磨功 w</td><td>乘用车 ≤ 0.40 J/mm²；商用车（&lt;6t）≤ 0.33 J/mm²；商用车（≥6t）≤ 0.25 J/mm²</td><td>《汽车设计》P62</td></tr>
       <tr><td>踏板力 Ff（乘用车）</td><td>80 ～ 150 N</td><td>《汽车设计》操纵机构</td></tr>
       <tr><td>踏板行程 S（乘用车）</td><td>80 ～ 150 mm</td><td>《汽车设计》操纵机构</td></tr>
     </table>
@@ -695,7 +694,7 @@ user-select: none
       <tr id="check_D"><td>摩擦片外径 D（经验公式）</td><td>KD×√Temax</td><td id="chk_D">—</td><td id="chk_D_v">—</td></tr>
       <tr id="check_c"><td>内外径比 c = d/D</td><td>0.53～0.70</td><td id="chk_c">—</td><td id="chk_c_v">—</td></tr>
       <tr id="check_vD"><td>最大圆周速度 vD</td><td>≤ 65～70 m/s</td><td id="chk_vD">—</td><td id="chk_vD_v">—</td></tr>
-      <tr id="check_w"><td>单位滑磨功 w</td><td>≤ 0.20 J/mm²</td><td id="chk_w">—</td><td id="chk_w_v">—</td></tr>
+      <tr id="check_w"><td>单位滑磨功 w</td><td id="chk_w_std">≤ 0.40 J/mm²（乘用车）</td><td id="chk_w">—</td><td id="chk_w_v">—</td></tr>
       <tr id="check_Tj"><td>极限转矩 Tⱼ（乘用车）</td><td>= 2.0×Temax</td><td id="chk_Tj">—</td><td id="chk_Tj_v">—</td></tr>
       <tr id="check_lever"><td>膜片弹簧杠杆比 (R₁-r₁)/(r₁-rf)</td><td>0.222～0.435</td><td id="chk_lever">—</td><td id="chk_lever_v">—</td></tr>
       <tr id="check_Ff"><td>踏板力 Ff</td><td>80～150 N（乘用车）</td><td id="chk_Ff">—</td><td id="chk_Ff_v">—</td></tr>
@@ -740,6 +739,20 @@ function fmt(v, n=3) { return isNaN(v) ? '—' : parseFloat(v.toFixed(n)).toStri
 
 function badge(ok, okText='✓ 满足', failText='✗ 不满足') {
   return ok ? `<span class="badge badge-ok">${okText}</span>` : `<span class="badge badge-err">${failText}</span>`;
+}
+
+// 根据车型返回单位摩擦面积滑磨功许用值 (J/mm²)
+function getWLimit() {
+  const vt = document.getElementById('vehicleType').value;
+  if (vt === 'light_truck') return 0.33;
+  if (vt === 'heavy_truck') return 0.25;
+  return 0.40; // 乘用车（默认）
+}
+function getWLimitLabel() {
+  const vt = document.getElementById('vehicleType').value;
+  if (vt === 'light_truck') return '≤ 0.33 J/mm²（商用车 <6t）';
+  if (vt === 'heavy_truck') return '≤ 0.25 J/mm²（商用车 ≥6t）';
+  return '≤ 0.40 J/mm²（乘用车）';
 }
 
 function switchTab(i) {
@@ -979,8 +992,8 @@ function calcVerify() {
       no: '7', name: '单位摩擦面积滑磨功 w（简化公式）',
       formula: `W_simple/(Z×A) = ${fmt(W_simple,1)}/(${Z}×${fmt(A,0)})`,
       value: `${fmt(w_spec_simple,5)} J/mm²`,
-      limit: '≤ 0.20 J/mm²（乘用车）',
-      ok: w_spec_simple <= 0.20,
+      limit: getWLimitLabel(),
+      ok: w_spec_simple <= getWLimit(),
       detail: ''
     }
   ];
@@ -1009,14 +1022,14 @@ function calcVerify() {
       起步车速 v₁ = ω₁·re/(i₁·i₀) = ${fmt(2*Math.PI*ne_start/60,3)}×${r_w}/(${i1}×${i0}) = ${fmt(v1,4)} m/s<br>
       W = 0.5 × ${ma} × ${fmt(v1*v1,5)} = <strong>${fmt(W_simple,2)} J</strong><br>
       w = W/(Z·A) = ${fmt(W_simple,2)}/(${Z}×${fmt(A,0)}) = <strong>${fmt(w_spec_simple,5)} J/mm²</strong>
-      ${badge(w_spec_simple<=0.20, '✓ ≤ 0.20 J/mm²', '✗ 超出 0.20 J/mm²')}<br><br>
+      ${badge(w_spec_simple<=getWLimit(), '✓ ' + getWLimitLabel(), '✗ 超出 ' + getWLimitLabel())}<br><br>
       <strong>【式2-20】W = (π²·ne²/1800)·(ma·re²)/(i₀²·ig²)</strong><br>
       ne = ${ne_start} r/min，re = ${r_w} m，i₀ = ${i0}，ig（一挡）= ${i1}<br>
       W = (π²×${ne_start}²/1800)×(${ma}×${r_w}²)/(${i0}²×${i1}²)<br>
       &nbsp;&nbsp; = ${fmt(Math.PI*Math.PI*ne*ne/1800,4)} × ${fmt(ma*r_w*r_w,5)} / ${fmt(i0*i0*ig*ig,4)}<br>
       W = <strong>${fmt(W_2_20,2)} J</strong><br>
       w = W/(Z·A) = ${fmt(W_2_20,2)}/(${Z}×${fmt(A,0)}) = <strong>${fmt(w_spec_2_20,5)} J/mm²</strong>
-      ${badge(w_spec_2_20<=0.20, '✓ ≤ 0.20 J/mm²', '✗ 超出 0.20 J/mm²')}<br><br>
+      ${badge(w_spec_2_20<=getWLimit(), '✓ ' + getWLimitLabel(), '✗ 超出 ' + getWLimitLabel())}<br><br>
       <span style="color:#555;font-size:12px">▶ 两式偏差：${fmt(Math.abs(W_2_20-W_simple)/W_simple*100,2)}%（式2-20考虑了传动链飞轮惯量，更严格）</span>
     </div>`;
   document.getElementById('slipDetail').innerHTML = slipHtml;
@@ -2490,9 +2503,9 @@ function calcSmartScore() {
   const _v1 = 2*Math.PI*_ne/60 * _rw / (_i1*_i0);
   const _W  = 0.5*_ma*_v1*_v1;
   const w   = _W / (Z*_A);
-  const w_ok = w > 0 && w <= 0.20;
-  const w_score = w_ok ? 4 : (w > 0 && w <= 0.25 ? 2 : (w > 0 ? 0 : 2));
-  items.push({ cat:'参数校核', name:'单位滑磨功 w', std:'≤0.20 J/mm²', val: w>0?`${fmt(w,5)} J/mm²`:'未计算', max:4, score:w_score });
+  const w_ok = w > 0 && w <= getWLimit();
+  const w_score = w_ok ? 4 : (w > 0 && w <= getWLimit()*1.25 ? 2 : (w > 0 ? 0 : 2));
+  items.push({ cat:'参数校核', name:'单位滑磨功 w', std: getWLimitLabel(), val: w>0?`${fmt(w,5)} J/mm²`:'未计算', max:4, score:w_score });
 
   const T0 = state.T0 || 0;
   const T0_ok = T0 > 0 && T0 <= 0.008;
@@ -2708,7 +2721,9 @@ function updateSummaryChecks() {
   upd('chk_D', `估算${fmt(D_est,1)} mm → 取${D} mm`, true);
   upd('chk_c', `c = ${fmt(c,3)}`, c>=0.53&&c<=0.70);
   upd('chk_vD', `${fmt(vD,2)} m/s`, vD<=70);
-  upd('chk_w', `${fmt(w_spec,5)} J/mm²`, w_spec<=0.20);
+  upd('chk_w', `${fmt(w_spec,5)} J/mm²`, w_spec<=getWLimit());
+  const wStdEl = document.getElementById('chk_w_std');
+  if (wStdEl) wStdEl.textContent = getWLimitLabel();
   upd('chk_Tj', `${fmt(Tj,1)} N·m`, Math.abs(Tj - 2*Temax) < 1);
   upd('chk_lever', lever > 0 ? `${fmt(lever,4)}` : '—', lever>=0.222&&lever<=0.435);
   upd('chk_Ff', Ff > 0 ? `${fmt(Ff,1)} N` : '—', !Ff || Ff <= 150);
@@ -2758,11 +2773,19 @@ function calcSummary() {
   html += `</div>`;
   document.getElementById('summaryTable').innerHTML = html;
 
+  // 计算 w_spec 用于总体校核
+  const _ma_s = getN('ma'), _i1_s = getN('i1'), _i0_s = getN('i0'), _rw_s = getN('r_wheel');
+  const _ne_s  = getN('ne_start') || 2000;
+  const _A_s   = Math.PI/4*(D*D-d*d);
+  const _v1_s  = 2*Math.PI*_ne_s/60 * _rw_s / (_i1_s*_i0_s);
+  const _W_s   = 0.5*_ma_s*_v1_s*_v1_s;
+  const w_spec = _A_s > 0 ? _W_s / (Z * _A_s) : 0;
+
   const checks = [
     { name: '后备系数β', ok: beta >= 1.10 && beta <= 1.75 },
     { name: '内外径比c', ok: d/D >= 0.53 && d/D <= 0.70 },
     { name: '最大圆周速度vD', ok: Math.PI*D/1000*getN('nemax')/60 <= 70 },
-    { name: '单位滑磨功w', ok: true }, // simplified
+    { name: '单位滑磨功w', ok: w_spec <= getWLimit() },
     { name: '膜片弹簧杠杆比', ok: !state.lever || (state.lever >= 0.222 && state.lever <= 0.435) },
     { name: '踏板力Ff', ok: !state.Ff || state.Ff <= 150 },
     { name: '操纵功WL≤30J', ok: !state.WL || state.WL <= 30 },
